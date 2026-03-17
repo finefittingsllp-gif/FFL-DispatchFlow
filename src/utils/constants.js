@@ -11,11 +11,11 @@ export const LS_KEYS = {
 
 // ── Gemini ───────────────────────────────────────────────────────────────────
 export const GEMINI_API_BASE           = "https://generativelanguage.googleapis.com/v1beta/models";
-// Primary model — stable, widely available on free and paid tiers
-export const GEMINI_MODEL              = "gemini-1.5-flash-latest";
+// Primary model — active and broadly available on v1beta
+export const GEMINI_MODEL              = "gemini-2.0-flash";
 export const GEMINI_API_URL            = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent`;
-// Fallback model — same family, guaranteed availability
-export const GEMINI_MODEL_FALLBACK     = "gemini-1.5-flash";
+// Fallback model — lighter variant used when primary fails
+export const GEMINI_MODEL_FALLBACK     = "gemini-2.0-flash-lite";
 export const GEMINI_API_URL_FALLBACK   = `${GEMINI_API_BASE}/${GEMINI_MODEL_FALLBACK}:generateContent`;
 export const GEMINI_MAX_TOKENS         = 2048;
 export const GEMINI_MAX_TOKENS_INVOICE = 2000;  // balanced speed + quality for invoice OCR

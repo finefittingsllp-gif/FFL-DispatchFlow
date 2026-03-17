@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { SettingsProvider } from "./context/SettingsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import Header from "./components/Layout/Header";
@@ -16,7 +16,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <SettingsProvider>
-      <BrowserRouter>
+      <HashRouter>
         <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#141416] transition-colors duration-200">
           <Header />
           <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -33,7 +33,7 @@ export default function App() {
           </main>
           <Footer />
         </div>
-      </BrowserRouter>
+      </HashRouter>
       </SettingsProvider>
     </ThemeProvider>
   );

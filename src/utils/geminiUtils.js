@@ -8,10 +8,21 @@ export {
   GEMINI_MAX_TOKENS, GEMINI_MAX_TOKENS_INVOICE, GEMINI_TEMPERATURE,
 } from "./constants";
 import {
+  GEMINI_API_BASE,
   GEMINI_API_URL as PRIMARY_URL,
   GEMINI_API_URL_FALLBACK as FALLBACK_URL,
   DEFAULT_RETRY_COUNT,
 } from "./constants";
+
+const PREFERRED_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-flash",
+];
+
+const modelUrlCache = new Map();
 
 /**
  * Robustly extract a JSON object from Gemini's response text.
@@ -71,6 +82,49 @@ async function callGeminiEndpoint(url, requestBody, retryCount, modelLabel) {
   }
 }
 
+function buildModelUrl(modelId, apiKey) {
+  return `${GEMINI_API_BASE}/${modelId}:generateContent?key=${apiKey}`;
+}
+
+async function resolveGeminiModelUrls(apiKey) {
+  if (modelUrlCache.has(apiKey)) return modelUrlCache.get(apiKey);
+
+  const defaultUrls = {
+    primaryUrl: `${PRIMARY_URL}?key=${apiKey}`,
+    fallbackUrl: `${FALLBACK_URL}?key=${apiKey}`,
+  };
+
+  try {
+    const listRes = await fetch(`${GEMINI_API_BASE}?key=${apiKey}`);
+    if (!listRes.ok) {
+      modelUrlCache.set(apiKey, defaultUrls);
+      return defaultUrls;
+    }
+
+    const listData = await listRes.json();
+    const models = Array.isArray(listData?.models) ? listData.models : [];
+    const availableIds = models
+      .filter((m) => Array.isArray(m?.supportedGenerationMethods) && m.supportedGenerationMethods.includes("generateContent"))
+      .map((m) => String(m.name || "").replace(/^models\//, ""));
+
+    const ordered = PREFERRED_MODELS.filter((id) => availableIds.includes(id));
+    if (ordered.length > 0) {
+      const resolved = {
+        primaryUrl: buildModelUrl(ordered[0], apiKey),
+        fallbackUrl: buildModelUrl(ordered[1] || ordered[0], apiKey),
+      };
+      modelUrlCache.set(apiKey, resolved);
+      return resolved;
+    }
+
+    modelUrlCache.set(apiKey, defaultUrls);
+    return defaultUrls;
+  } catch {
+    modelUrlCache.set(apiKey, defaultUrls);
+    return defaultUrls;
+  }
+}
+
 /**
  * Call Gemini with automatic model cascade:
  *   1. Gemini 1.5 Flash Latest — stable, tried first
@@ -97,9 +151,11 @@ export async function callGeminiWithFallback(requestBody, apiKey, options = {}) 
     },
   };
 
+  const { primaryUrl, fallbackUrl } = await resolveGeminiModelUrls(apiKey);
+
   // ── Primary model call ────────────────────────────────────────────────────
   const primaryResult = await callGeminiEndpoint(
-    `${PRIMARY_URL}?key=${apiKey}`,
+    primaryUrl,
     primaryBody,
     retryCount,
     "primary"
@@ -129,7 +185,7 @@ export async function callGeminiWithFallback(requestBody, apiKey, options = {}) 
   };
 
   const fallbackResult = await callGeminiEndpoint(
-    `${FALLBACK_URL}?key=${apiKey}`,
+    fallbackUrl,
     fallbackBody,
     retryCount,
     "fallback"
