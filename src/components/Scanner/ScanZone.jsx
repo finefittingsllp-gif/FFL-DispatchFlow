@@ -6,23 +6,72 @@ import { useScanner } from "../../hooks/useScanner";
 import CameraView from "./CameraView";
 import ImagePreview from "./ImagePreview";
 
+const SCAN_PROFILES = {
+  fast: {
+    maxWidth: 1200,
+    jpegQuality: 0.78,
+    retryCount: 2,
+    label: "Fast",
+  },
+  high: {
+    maxWidth: 1800,
+    jpegQuality: 0.9,
+    retryCount: 3,
+    label: "High Accuracy",
+  },
+};
+
+async function optimizeImageForOCR(dataUrl, profile) {
+  if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
+    return dataUrl;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, profile.maxWidth / img.width);
+      const targetWidth = Math.max(1, Math.round(img.width * scale));
+      const targetHeight = Math.max(1, Math.round(img.height * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+      resolve(canvas.toDataURL("image/jpeg", profile.jpegQuality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 // scanFn: optional override — async (base64, apiKey) => parsedObject
 // label: optional header text override
 export default function ScanZone({ onOCRSuccess, apiKey, scanFn, label }) {
   const [image, setImage]           = useState(null);
   const [showRaw, setShowRaw]       = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [scanMode, setScanMode]     = useState("fast");
   const fileInputRef = useRef(null);
 
   const { isActive, videoRef, startCamera, stopCamera, captureFrame, error: cameraError } = useCamera();
   const { isScanning, error, isQuota, result, hasLastImage, scan, retry, clearScanner } = useScanner();
 
   const noApiKey = !apiKey;
+  const profile = SCAN_PROFILES[scanMode] || SCAN_PROFILES.fast;
 
   // Single entry point for every scan trigger (file, camera, drag-drop)
-  const handleScan = useCallback((base64) => {
-    scan(base64, apiKey, scanFn, onOCRSuccess);
-  }, [scan, apiKey, scanFn, onOCRSuccess]);
+  const handleScan = useCallback(async (base64) => {
+    const optimized = await optimizeImageForOCR(base64, profile);
+    const scanOptions = { mode: scanMode, retryCount: profile.retryCount };
+    scan(optimized, apiKey, scanFn, onOCRSuccess, scanOptions);
+  }, [scan, apiKey, scanFn, onOCRSuccess, profile, scanMode]);
 
   const handleFileInput = (file) => {
     if (!file || !file.type.startsWith("image/")) return;
@@ -73,6 +122,28 @@ export default function ScanZone({ onOCRSuccess, apiKey, scanFn, label }) {
         </div>
       )}
 
+      {!noApiKey && (
+        <div className="flex items-center justify-between gap-3 bg-slate-100 dark:bg-[#2C2C2E] rounded-lg p-2">
+          <span className="text-xs font-medium text-slate-600 dark:text-gray-300">Scan Mode</span>
+          <div className="inline-flex rounded-md border border-slate-300 dark:border-[#3A3A3C] overflow-hidden">
+            {Object.entries(SCAN_PROFILES).map(([key, cfg]) => (
+              <button
+                key={key}
+                onClick={() => setScanMode(key)}
+                disabled={isScanning}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  scanMode === key
+                    ? "bg-amber-500 text-black"
+                    : "bg-transparent text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-[#3A3A3C]"
+                } disabled:opacity-60`}
+              >
+                {cfg.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isActive ? (
         <CameraView videoRef={videoRef} onCapture={handleCapture} onClose={stopCamera} />
       ) : image ? (
@@ -120,7 +191,7 @@ export default function ScanZone({ onOCRSuccess, apiKey, scanFn, label }) {
       {isScanning && (
         <div className="flex items-center gap-3 bg-slate-100 dark:bg-[#2C2C2E] rounded-lg p-3">
           <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-          <span className="text-sm text-amber-600 dark:text-amber-400">Analyzing image with Gemini AI…</span>
+          <span className="text-sm text-amber-600 dark:text-amber-400">Analyzing image with Gemini AI ({profile.label})…</span>
         </div>
       )}
 

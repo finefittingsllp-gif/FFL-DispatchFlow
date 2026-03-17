@@ -176,8 +176,8 @@ export default function InvoicePage() {
   }, []);
 
   // Custom scan function for invoices passed to ScanZone
-  const invoiceScanFn = useCallback(async (base64, apiKey) => {
-    const raw = await scanInvoice(base64, apiKey);
+  const invoiceScanFn = useCallback(async (base64, apiKey, options) => {
+    const raw = await scanInvoice(base64, apiKey, options);
     return parseInvoiceOCR(raw);
   }, []);
 

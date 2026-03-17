@@ -50,7 +50,7 @@ export function useCamera() {
     canvas.width = videoRef.current.videoWidth || 1280;
     canvas.height = videoRef.current.videoHeight || 720;
     canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-    return canvas.toDataURL("image/jpeg", 0.9);
+    return canvas.toDataURL("image/jpeg", 0.78);
   }, []);
 
   return { stream, error, isActive, videoRef, startCamera, stopCamera, captureFrame };

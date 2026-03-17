@@ -1,7 +1,12 @@
 import { GEMINI_MAX_TOKENS_INVOICE, GEMINI_TEMPERATURE, callGeminiWithFallback } from "../utils/geminiUtils";
 
-export async function scanInvoice(imageBase64, apiKey) {
+function resolveInvoiceMaxTokens(mode) {
+  return mode === "high" ? Math.max(GEMINI_MAX_TOKENS_INVOICE, 3200) : GEMINI_MAX_TOKENS_INVOICE;
+}
+
+export async function scanInvoice(imageBase64, apiKey, options = {}) {
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  const maxOutputTokens = resolveInvoiceMaxTokens(options.mode);
 
   const requestBody = {
     contents: [
@@ -40,7 +45,7 @@ Return ONLY a valid JSON object with these exact fields (use empty string "" if 
   "reverseCharge": "Yes or No — whether reverse charge applies",
   "hsnCodes": "Comma-separated list of HSN/SAC codes from line items",
 
-  "lineItems": "Formatted as: '1. [description] | [qty] [unit] | [rate] | [amount]; 2. ...' — include ALL line items",
+  "lineItems": "Formatted as: '1. [description] | [qty] [unit]; 2. ...' — include ALL line items, DO NOT include rate or amount in lineItems",
 
   "subtotal": "Subtotal before tax (numeric, no currency symbol)",
   "cgst": "CGST amount (numeric)",
@@ -70,11 +75,11 @@ IMPORTANT:
     ],
     generationConfig: {
       temperature: GEMINI_TEMPERATURE,
-      maxOutputTokens: GEMINI_MAX_TOKENS_INVOICE,
+      maxOutputTokens,
     },
   };
 
-  return callGeminiWithFallback(requestBody, apiKey);
+  return callGeminiWithFallback(requestBody, apiKey, { retryCount: options.retryCount });
 }
 
 // Sanitize the raw Gemini response into clean field strings

@@ -37,15 +37,16 @@ export function useScanner() {
    * Run the OCR pipeline.
    * @param {string}   base64    - image as data-URL or raw base64
    * @param {string}   apiKey    - Gemini API key
-   * @param {Function} scanFn    - optional custom scan fn: (base64, apiKey) => parsedObj
+   * @param {Function} scanFn    - optional custom scan fn: (base64, apiKey, options) => parsedObj
    * @param {Function} onSuccess - called with the parsed result on success
+   * @param {object}   options   - scan tuning options (mode, retryCount)
    */
-  const scan = useCallback(async (base64, apiKey, scanFn, onSuccess) => {
+  const scan = useCallback(async (base64, apiKey, scanFn, onSuccess, options = {}) => {
     if (!apiKey) return;
 
     // Persist inputs so retry() can replay without UI interaction
     lastImageRef.current  = base64;
-    lastParamsRef.current = { apiKey, scanFn, onSuccess };
+    lastParamsRef.current = { apiKey, scanFn, onSuccess, options };
 
     // Reset all state before each attempt
     setIsScanning(true);
@@ -56,9 +57,9 @@ export function useScanner() {
     try {
       let parsed;
       if (scanFn) {
-        parsed = await scanFn(base64, apiKey);
+        parsed = await scanFn(base64, apiKey, options);
       } else {
-        const raw = await scanDispatchTag(base64, apiKey);
+        const raw = await scanDispatchTag(base64, apiKey, options);
         parsed = parseOCRResponse(raw);
       }
       setResult(JSON.stringify(parsed, null, 2));
@@ -80,7 +81,7 @@ export function useScanner() {
     const img    = lastImageRef.current;
     const params = lastParamsRef.current;
     if (!img || !params) return;
-    scan(img, params.apiKey, params.scanFn, params.onSuccess);
+    scan(img, params.apiKey, params.scanFn, params.onSuccess, params.options);
   }, [scan]);
 
   /** Full reset — called when the user clears the image */

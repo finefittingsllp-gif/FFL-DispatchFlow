@@ -1,7 +1,12 @@
 import { GEMINI_MAX_TOKENS, GEMINI_TEMPERATURE, callGeminiWithFallback } from "../utils/geminiUtils";
 
-export async function scanDispatchTag(imageBase64, apiKey) {
+function resolveDispatchMaxTokens(mode) {
+  return mode === "high" ? Math.max(GEMINI_MAX_TOKENS, 3072) : GEMINI_MAX_TOKENS;
+}
+
+export async function scanDispatchTag(imageBase64, apiKey, options = {}) {
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  const maxOutputTokens = resolveDispatchMaxTokens(options.mode);
 
   const requestBody = {
     contents: [
@@ -49,9 +54,9 @@ IMPORTANT:
     ],
     generationConfig: {
       temperature: GEMINI_TEMPERATURE,
-      maxOutputTokens: GEMINI_MAX_TOKENS,
+      maxOutputTokens,
     },
   };
 
-  return callGeminiWithFallback(requestBody, apiKey);
+  return callGeminiWithFallback(requestBody, apiKey, { retryCount: options.retryCount });
 }

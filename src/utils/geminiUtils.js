@@ -54,15 +54,28 @@ export function parseGeminiJSON(text) {
  *
  * @param {object} requestBody  - Gemini request body (contents + generationConfig)
  * @param {string} apiKey       - Google Generative AI API key
+ * @param {object} options      - Optional call options (retryCount)
  * @returns {object}            - Parsed JSON result from Gemini
  */
-export async function callGeminiWithFallback(requestBody, apiKey) {
+export async function callGeminiWithFallback(requestBody, apiKey, options = {}) {
+  const retryCount = Number.isInteger(options.retryCount) && options.retryCount > 0
+    ? options.retryCount
+    : DEFAULT_RETRY_COUNT;
+
+  const primaryBody = {
+    ...requestBody,
+    generationConfig: {
+      ...requestBody.generationConfig,
+      responseMimeType: "application/json",
+    },
+  };
+
   // ── Primary: Gemini 2.5 Flash ───────────────────────────────────────────
   try {
     const res = await fetchWithRetry(
       `${PRIMARY_URL}?key=${apiKey}`,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) },
-      DEFAULT_RETRY_COUNT
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(primaryBody) },
+      retryCount
     );
     if (res.ok) {
       const data = await res.json();
@@ -99,7 +112,7 @@ export async function callGeminiWithFallback(requestBody, apiKey) {
   const res2 = await fetchWithRetry(
     `${FALLBACK_URL}?key=${apiKey}`,
     { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fallbackBody) },
-    DEFAULT_RETRY_COUNT
+    retryCount
   );
 
   if (!res2.ok) {

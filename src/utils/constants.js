@@ -18,11 +18,11 @@ export const GEMINI_API_URL            = `${GEMINI_API_BASE}/${GEMINI_MODEL}:gen
 export const GEMINI_MODEL_FALLBACK     = "gemini-1.5-flash";
 export const GEMINI_API_URL_FALLBACK   = `${GEMINI_API_BASE}/${GEMINI_MODEL_FALLBACK}:generateContent`;
 export const GEMINI_MAX_TOKENS         = 2048;
-export const GEMINI_MAX_TOKENS_INVOICE = 4096;  // invoices have more text
+export const GEMINI_MAX_TOKENS_INVOICE = 2000;  // balanced speed + quality for invoice OCR
 export const GEMINI_TEMPERATURE        = 0.1;
 
 // ── Retry / Loading ──────────────────────────────────────────────────────────
-export const DEFAULT_RETRY_COUNT   = 3;
+export const DEFAULT_RETRY_COUNT   = 2;
 export const SKELETON_DELAY_MS     = 400;
 
 // ── ID Generation ────────────────────────────────────────────────────────────
