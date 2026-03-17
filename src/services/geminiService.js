@@ -6,5 +6,3 @@
  * DO NOT import runGemini — use scanDispatchTag or scanInvoice instead.
  */
 export { GEMINI_API_URL, parseGeminiJSON } from "../utils/geminiUtils";
-  }
-};

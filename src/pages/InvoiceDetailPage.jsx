@@ -114,11 +114,26 @@ export default function InvoiceDetailPage() {
         </div>
 
         {/* Line items */}
-        {inv.lineItems && (
+        {(inv.itemCodes || inv.lineItems) && (
           <div>
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Line Items</div>
-            <div className="border border-gray-200 rounded p-2 text-xs text-gray-700 whitespace-pre-line font-mono bg-gray-50">
-              {inv.lineItems}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {inv.itemCodes && (
+                <div>
+                  <div className="text-[9px] text-gray-400 uppercase tracking-wider mb-1">Item Codes / Part Nos.</div>
+                  <div className="border border-gray-200 rounded p-2 text-xs text-gray-700 whitespace-pre-line font-mono bg-gray-50">
+                    {inv.itemCodes}
+                  </div>
+                </div>
+              )}
+              {inv.lineItems && (
+                <div className={inv.itemCodes ? "" : "sm:col-span-2"}>
+                  <div className="text-[9px] text-gray-400 uppercase tracking-wider mb-1">Descriptions</div>
+                  <div className="border border-gray-200 rounded p-2 text-xs text-gray-700 whitespace-pre-line font-mono bg-gray-50">
+                    {inv.lineItems}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

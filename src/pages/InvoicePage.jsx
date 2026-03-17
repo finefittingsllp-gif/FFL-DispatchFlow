@@ -14,7 +14,7 @@ const EMPTY = {
   vendorName: "", vendorAddress: "", vendorGstin: "", vendorPhone: "", vendorEmail: "",
   buyerName: "", buyerAddress: "", buyerGstin: "",
   placeOfSupply: "", reverseCharge: "", hsnCodes: "",
-  lineItems: "",
+  itemCodes: "", lineItems: "",
   subtotal: "", cgst: "", sgst: "", igst: "", totalTax: "", totalAmount: "", totalInWords: "",
   bankName: "", accountNumber: "", ifscCode: "", upiId: "",
   notes: "",
@@ -106,11 +106,26 @@ function InvoicePreview({ invoice, onBack, onSave, saving }) {
         </div>
 
         {/* Line items */}
-        {invoice.lineItems && (
+        {(invoice.itemCodes || invoice.lineItems) && (
           <div>
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Line Items</div>
-            <div className="border border-gray-200 rounded p-2 text-xs text-gray-700 whitespace-pre-line font-mono bg-gray-50">
-              {invoice.lineItems}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {invoice.itemCodes && (
+                <div>
+                  <div className="text-[9px] text-gray-400 uppercase tracking-wider mb-1">Item Codes</div>
+                  <div className="border border-gray-200 rounded p-2 text-xs text-gray-700 whitespace-pre-line font-mono bg-gray-50">
+                    {invoice.itemCodes}
+                  </div>
+                </div>
+              )}
+              {invoice.lineItems && (
+                <div className={invoice.itemCodes ? "" : "sm:col-span-2"}>
+                  <div className="text-[9px] text-gray-400 uppercase tracking-wider mb-1">Descriptions</div>
+                  <div className="border border-gray-200 rounded p-2 text-xs text-gray-700 whitespace-pre-line font-mono bg-gray-50">
+                    {invoice.lineItems}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -300,13 +315,23 @@ export default function InvoicePage() {
       {/* Line Items */}
       <div className="card space-y-3">
         <p className="section-header">Line Items</p>
-        <Field
-          label="Items (one per line or AI-formatted)"
-          value={formData.lineItems}
-          onChange={(v) => setField("lineItems", v)}
-          placeholder={"1. MS Round Bar IS2062 | 50 pcs | ₹500/pc | ₹25,000\n2. MS Plate 6mm | 10 sheets | ₹2,000/sheet | ₹20,000"}
-          textarea
-        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field
+            label="Item Codes / Part Numbers (one per line)"
+            value={formData.itemCodes}
+            onChange={(v) => setField("itemCodes", v)}
+            placeholder={"PRT-001\nPRT-002\n87089900"}
+            textarea
+            mono
+          />
+          <Field
+            label="Item Descriptions (one per line or AI-formatted)"
+            value={formData.lineItems}
+            onChange={(v) => setField("lineItems", v)}
+            placeholder={"1. MS Round Bar IS2062 | 50 pcs\n2. MS Plate 6mm | 10 sheets"}
+            textarea
+          />
+        </div>
       </div>
 
       {/* Amounts */}

@@ -45,7 +45,8 @@ Return ONLY a valid JSON object with these exact fields (use empty string "" if 
   "reverseCharge": "Yes or No — whether reverse charge applies",
   "hsnCodes": "Comma-separated list of HSN/SAC codes from line items",
 
-  "lineItems": "Formatted as: '1. [description] | [qty] [unit]; 2. ...' — include ALL line items, DO NOT include rate or amount in lineItems",
+  "itemCodes": "Item codes / Part numbers — one per line, in the same order as line items. Look for: Part No., Part #, Code, Ref No., or standalone alphanumeric codes printed below or beside each item name. If no code exists for an item use empty string for that line. Format: one code per line e.g. '\nPRT-001\nPRT-002'",
+  "lineItems": "Formatted as: '1. [description] | [qty] [unit]; 2. ...' — include ALL line items, DO NOT include rate or amount or item code in lineItems",
 
   "subtotal": "Subtotal before tax (numeric, no currency symbol)",
   "cgst": "CGST amount (numeric)",
@@ -90,7 +91,7 @@ export function parseInvoiceOCR(raw) {
     "vendorName", "vendorAddress", "vendorGstin", "vendorPhone", "vendorEmail",
     "buyerName", "buyerAddress", "buyerGstin",
     "placeOfSupply", "reverseCharge", "hsnCodes",
-    "lineItems",
+    "itemCodes", "lineItems",
     "subtotal", "cgst", "sgst", "igst", "totalTax", "totalAmount", "totalInWords",
     "bankName", "accountNumber", "ifscCode", "upiId",
     "notes",
